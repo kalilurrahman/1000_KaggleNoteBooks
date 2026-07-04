@@ -190,7 +190,7 @@ def log_signal(signal: MarketSignal):
     signals_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(signals_file, "a") as f:
-        f.write(json.dumps(signal.dict()) + "\n")
+        f.write(json.dumps(signal.model_dump()) + "\n")
 
 if __name__ == "__main__":
     import uvicorn
