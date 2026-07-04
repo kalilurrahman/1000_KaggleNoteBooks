@@ -2,7 +2,9 @@ name: Deploy QuizVerse to GitHub Pages
 
 on:
   push:
-    branches: [main, claude/trivia-quiz-game-pwa-4klmyx]
+    # the github-pages environment only accepts deployments from the
+    # default branch, so triggering elsewhere would fail before any step
+    branches: [main]
     paths:
       - "trivia-quiz-pwa/**"
       - ".github/workflows/deploy-pages.yml"
