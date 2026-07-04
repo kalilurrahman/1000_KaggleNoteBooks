@@ -36,9 +36,12 @@ env/
 .DS_Store
 Thumbs.db
 
-# Project-specific
+# Project-specific (runtime generated)
 *.jsonl
 *.json
 data/
 training/
 models/
+market-pulse/data/
+market-pulse/training/
+market-pulse/models/
