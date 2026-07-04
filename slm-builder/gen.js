@@ -41,6 +41,7 @@ const TEACHERS = {
 };
 
 const DOMAIN_DATASET_HINTS = {
+  sports:   ["cricsheet.org — ball-by-ball data for every international & IPL match (open license)", "Kaggle: IPL, ODI/T20/Test match & player-stats datasets", "mandarjoshi/trivia_qa + openbookqa (HF) — quiz-style QA to mine for format", "Wikipedia sports portals (dumps are CC BY-SA) for facts & records"],
   legal:    ["pile-of-law/pile-of-law (256GB legal corpus)", "casehold/casehold", "lexlms/lex_files", "joelniklaus/legal_case_document_summarization"],
   medical:  ["epfl-llm/guidelines (clinical guidelines)", "medalpaca/medical_meadow_* datasets", "qiaojin/PubMedQA", "bigbio/* biomedical suites"],
   finance:  ["gbharti/finance-alpaca", "PatronusAI/financebench", "Josephgflowers/Finance-Instruct-500k", "sujet-ai/Sujet-Finance-Instruct-177k"],
@@ -123,6 +124,7 @@ function sysPrompt(S) {
     extraction: `You extract structured data from ${dom} text${S.topic ? ` about ${S.topic}` : ""}. Always respond with valid JSON matching the requested schema.`,
     classification: `You classify ${dom} text${S.topic ? ` about ${S.topic}` : ""} into the given label set. Respond with the label only.`,
     code: `You are an expert coding assistant for ${dom}${S.topic ? ` (${S.topic})` : ""}. Produce correct, idiomatic, well-commented code.`,
+    quiz: `You are a quiz master for ${dom}${S.topic ? ` — specifically ${S.topic}` : ""}. When asked for a question, respond ONLY with valid JSON: {"question": "...", "options": ["...", "...", "...", "..."], "answer_index": 0, "difficulty": "easy"|"medium"|"hard", "explanation": "..."}. When the user submits an answer, say whether it is correct, give the explanation, then offer the next question. Never invent facts — every question must be verifiably true.`,
   }[S.task] || `You are a helpful assistant specialized in ${dom}.`;
   const tone = S.tone ? ` Maintain a ${S.tone} tone.` : "";
   const lang = S.languages && S.languages.toLowerCase() !== "english" ? ` Respond in ${S.languages} unless asked otherwise.` : "";
@@ -289,6 +291,16 @@ function genSampleJsonl(S) {
     { role: "user", content: u },
     { role: "assistant", content: a },
   ]});
+  if (S.task === "quiz") {
+    return [
+      mk(`Give me a medium question about ${S.topic || dom}.`,
+         JSON.stringify({ question: `<a real, verifiable ${dom} question>`, options: ["<option A>", "<option B>", "<option C>", "<option D>"], answer_index: 2, difficulty: "medium", explanation: "<one-sentence explanation of why the answer is correct>" })),
+      mk(`My answer is B.`,
+         `Not quite — the correct answer was C. <repeat the explanation, add one fun fact>. Ready for the next one? Pick easy, medium, or hard.`),
+      mk(`Ask me something about <clearly unrelated topic>.`,
+         `I'm your ${S.topic || dom} quiz master, so that one's outside my wheelhouse — but I've got plenty more ${dom} questions. Want an easy, medium, or hard one?`),
+    ].join("\n") + "\n";
+  }
   return [
     mk(`Give me a quick overview of the most important concepts in ${S.topic || dom}.`,
        `Here are the core concepts, in the order they usually matter: ... (replace with a genuine expert answer for your domain)`),
@@ -342,7 +354,7 @@ You are producing GOLD-STANDARD training answers. Requirements:
 - Show reasoning briefly, then the answer. Use structure (lists, headings) when it helps.
 - Stay grounded in ${dom} practice; use realistic terminology, numbers, and examples.
 - For out-of-scope/unsafe requests: refuse briefly and redirect to ${S.topic || dom}.
-${S.task === "extraction" ? "- Output strictly valid JSON when a schema is requested." : ""}${S.task === "code" ? "- Code must run; include imports; add brief comments." : ""}
+${S.task === "extraction" ? "- Output strictly valid JSON when a schema is requested." : ""}${S.task === "code" ? "- Code must run; include imports; add brief comments." : ""}${S.task === "quiz" ? "- Quiz questions must be strictly valid JSON per the system-prompt schema; every fact verifiable; vary difficulty 40% easy / 40% medium / 20% hard; wrong options must be plausible." : ""}
 ${F}
 
 ## 4) Quality-filter prompt (self-critique; drop scores < 4)
@@ -1664,3 +1676,99 @@ function renderMarkdown(md) {
   flushPara(); closeLists();
   return out.join("\n");
 }
+
+/* ------------------------------ Templates --------------------------------- */
+/* One-click example projects. `state` is merged over DEFAULTS by the app.   */
+
+const TEMPLATES = [
+  {
+    id: "cricket-quiz", icon: "🏏", title: "Cricket Quiz Game",
+    desc: "A quiz-master SLM for a cricket trivia game: emits questions as strict JSON (question, 4 options, answer, difficulty, explanation), checks answers, banters like a quiz host. Small enough (0.6B) to embed in a game and run on any laptop.",
+    tags: ["quiz task", "distill path", "runs on CPU", "free Colab training"],
+    state: {
+      name: "cricket-quiz-slm", domain: "sports", domainText: "",
+      topic: "International and IPL cricket trivia: players, records, World Cups (1975–today), rules and laws, famous matches and rivalries. Questions must be factually verifiable, at easy/medium/hard levels, suitable for a quiz game.",
+      task: "quiz", tone: "energetic, playful, like a quiz-show host",
+      deployTarget: "cpu", contextLen: 2048, dataAvail: "none", budget: "colab",
+      path: "distill", teacher: "claude", sftCount: 8000, baseModel: "qwen3-0.6b",
+      method: "qlora", framework: "unsloth", hw: "t4", seqLen: 1024, epochs: 3,
+      evalHoldout: 400, quant: "q4_k_m", runtime: "llamacpp",
+      sources: ["Synthetic data from an LLM teacher", "Public datasets (Hugging Face)", "Existing structured data (DBs, spreadsheets)"],
+    },
+  },
+  {
+    id: "cricket-expert", icon: "🎙️", title: "Cricket Expert Assistant",
+    desc: "A commentator-grade cricket brain: rules and umpiring calls, tactics, player stats, history across Test/ODI/T20/IPL, match analysis. DPO stage included so it learns pundit-quality judgment, not just facts.",
+    tags: ["assistant task", "distill + DPO", "1.7B", "Ollama"],
+    state: {
+      name: "cricket-expert-slm", domain: "sports", domainText: "",
+      topic: "Cricket expertise: laws of the game and umpiring decisions, tactics and field placements, player statistics and records, history of Test/ODI/T20 formats and the IPL, famous matches, and match analysis.",
+      task: "assistant", tone: "knowledgeable, enthusiastic, commentator-style",
+      deployTarget: "gpu24", contextLen: 4096, dataAvail: "none", budget: "single24",
+      path: "distill", teacher: "claude", sftCount: 15000, prefCount: 4000, stageDpo: true,
+      baseModel: "qwen3-1.7b", method: "qlora", framework: "unsloth", hw: "rtx4090",
+      seqLen: 2048, epochs: 3, evalHoldout: 500, quant: "q4_k_m", runtime: "ollama",
+      sources: ["Synthetic data from an LLM teacher", "Public datasets (Hugging Face)", "Websites / knowledge bases (scraped with permission)"],
+    },
+  },
+  {
+    id: "trivia-engine", icon: "🎯", title: "General Trivia Quiz Engine",
+    desc: "A pub-quiz engine across science, history, geography, movies, music, and sports. Same JSON quiz contract as the cricket template — swap the topic and you have a quiz SLM for anything.",
+    tags: ["quiz task", "any topic", "1.7B"],
+    state: {
+      name: "trivia-quiz-slm", domain: "general",
+      topic: "General-knowledge pub-quiz trivia across science, history, geography, movies, music, literature, and sports. Balanced category coverage; every question verifiable.",
+      task: "quiz", tone: "witty, fast-paced quiz host",
+      deployTarget: "gpu24", contextLen: 2048, dataAvail: "none", budget: "colab",
+      path: "distill", teacher: "claude", sftCount: 12000, baseModel: "qwen3-1.7b",
+      method: "qlora", framework: "unsloth", hw: "t4", seqLen: 1024, epochs: 3,
+      evalHoldout: 500, quant: "q4_k_m", runtime: "ollama",
+      sources: ["Synthetic data from an LLM teacher", "Public datasets (Hugging Face)"],
+    },
+  },
+  {
+    id: "tax-helper", icon: "🧾", title: "Income-Tax Q&A Helper",
+    desc: "A grounded Q&A model for Indian income-tax rules for salaried employees: deductions, regimes, filing. Built to answer from provided context (pairs with RAG) and say \"I don't know\" rather than guess.",
+    tags: ["Q&A / RAG task", "finance domain", "privacy-friendly"],
+    state: {
+      name: "tax-helper-slm", domain: "finance",
+      topic: "Indian income-tax rules for salaried employees: old vs new regime, deductions (80C/80D/HRA), TDS, ITR filing, capital gains basics. Answers must cite the provided context and flag when rules may have changed.",
+      task: "qa", tone: "precise, patient, plain-language",
+      deployTarget: "gpu24", contextLen: 8192, dataAvail: "small", budget: "single24",
+      path: "finetune", teacher: "claude", sftCount: 10000, baseModel: "qwen3-1.7b",
+      method: "qlora", framework: "unsloth", hw: "rtx4090", seqLen: 4096, epochs: 2,
+      evalHoldout: 500, quant: "q5_k_m", runtime: "ollama", privacy: true,
+      sources: ["Synthetic data from an LLM teacher", "Books / papers / regulations (licensed)", "Expert-written examples (SMEs)"],
+    },
+  },
+  {
+    id: "support-bot", icon: "🎧", title: "Customer Support Bot",
+    desc: "A product-support assistant trained on your tickets, docs, and macros. Includes the feedback flywheel so real conversations keep improving it after launch.",
+    tags: ["assistant task", "fine-tune + DPO", "vLLM production"],
+    state: {
+      name: "support-bot-slm", domain: "support",
+      topic: "Customer support for <your product>: account issues, billing, troubleshooting, how-to guidance, escalation etiquette. Replace this sentence with your product's specifics.",
+      task: "assistant", tone: "warm, efficient, solution-first",
+      deployTarget: "server", contextLen: 4096, dataAvail: "medium", budget: "single24",
+      path: "finetune", teacher: "gpt", sftCount: 20000, prefCount: 5000, stageDpo: true,
+      baseModel: "phi-4-mini", method: "qlora", framework: "axolotl", hw: "a100-40",
+      seqLen: 2048, epochs: 2, evalHoldout: 800, quant: "q4_k_m", runtime: "vllm",
+      sources: ["Support tickets / chat logs / emails", "Internal documents (wikis, manuals, PDFs)", "Synthetic data from an LLM teacher", "Expert-written examples (SMEs)"],
+    },
+  },
+  {
+    id: "study-tutor", icon: "📚", title: "Class-10 Science Tutor",
+    desc: "A patient CBSE Class-10 science tutor: explains concepts step by step, quizzes the student, adapts to mistakes. A great template for any curriculum-bound education SLM.",
+    tags: ["education domain", "assistant task", "runs on CPU"],
+    state: {
+      name: "science-tutor-slm", domain: "education",
+      topic: "CBSE Class 10 science (NCERT syllabus): physics (light, electricity), chemistry (reactions, acids/bases, carbon compounds), biology (life processes, heredity). Explain step by step at a 15-year-old's level, with everyday examples.",
+      task: "assistant", tone: "encouraging, patient teacher; simple English",
+      deployTarget: "cpu", contextLen: 4096, dataAvail: "none", budget: "colab",
+      path: "distill", teacher: "claude", sftCount: 12000, baseModel: "qwen3-1.7b",
+      method: "qlora", framework: "unsloth", hw: "t4", seqLen: 2048, epochs: 3,
+      evalHoldout: 500, quant: "q4_k_m", runtime: "ollama",
+      sources: ["Synthetic data from an LLM teacher", "Books / papers / regulations (licensed)", "Public datasets (Hugging Face)"],
+    },
+  },
+];
