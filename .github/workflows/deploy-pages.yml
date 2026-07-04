@@ -1,19 +1,22 @@
-name: Deploy QuizVerse to GitHub Pages
+name: Deploy web apps to GitHub Pages
+
+# Publishes both static apps to the gh-pages branch, which GitHub Pages serves:
+#   slm-builder/     -> site root   (keeps its existing URL)
+#   trivia-quiz-pwa/ -> /quizverse/
+# (The Actions-based Pages deployment needs the site pre-created by an admin;
+# branch publishing works with the default workflow token.)
 
 on:
   push:
-    # the github-pages environment only accepts deployments from the
-    # default branch, so triggering elsewhere would fail before any step
     branches: [main]
     paths:
+      - "slm-builder/**"
       - "trivia-quiz-pwa/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: pages
@@ -22,16 +25,23 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: trivia-quiz-pwa
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -r slm-builder/. site/
+          mkdir -p site/quizverse
+          cp -r trivia-quiz-pwa/. site/quizverse/
+          touch site/.nojekyll
+      - name: Publish to gh-pages
+        run: |
+          cd site
+          git init -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy site from ${GITHUB_SHA}"
+          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
