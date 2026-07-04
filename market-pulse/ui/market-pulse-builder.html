@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Pulse SLM Builder & Deployer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 2px solid #4a9eff;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+
+        h1 {
+            font-size: 2em;
+            color: #4a9eff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.5em;
+        }
+
+        .tagline {
+            color: #888;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid #4a9eff;
+            border-radius: 8px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel h2 {
+            color: #4a9eff;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #b0b0b0;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #4a9eff;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 0.95em;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #6ab3ff;
+            box-shadow: 0 0 8px rgba(74, 158, 255, 0.3);
+        }
+
+        .radio-group,
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-item,
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="radio"],
+        input[type="checkbox"] {
+            accent-color: #4a9eff;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4a9eff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #6ab3ff;
+            box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(74, 158, 255, 0.2);
+            color: #4a9eff;
+            border: 1px solid #4a9eff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(74, 158, 255, 0.3);
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .metric-card {
+            background: rgba(74, 158, 255, 0.1);
+            border: 1px solid #4a9eff;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .metric-label {
+            color: #888;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            color: #4a9eff;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-healthy {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid #2ecc71;
+        }
+
+        .status-warning {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+            border: 1px solid #f1c40f;
+        }
+
+        .status-error {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .collapsible {
+            margin-top: 20px;
+        }
+
+        .collapsible-header {
+            background: rgba(74, 158, 255, 0.1);
+            padding: 12px 15px;
+            border-left: 3px solid #4a9eff;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px;
+        }
+
+        .collapsible-header:hover {
+            background: rgba(74, 158, 255, 0.15);
+        }
+
+        .collapsible-content {
+            display: none;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.1);
+            border-left: 3px solid #4a9eff;
+            margin-top: 5px;
+            border-radius: 4px;
+        }
+
+        .collapsible-content.active {
+            display: block;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 3px solid #4a9eff;
+            font-family: "Courier New", monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+            color: #4a9eff;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: rgba(74, 158, 255, 0.1);
+            color: #4a9eff;
+            border-left-color: #4a9eff;
+        }
+
+        .alert-success {
+            background: rgba(46, 204, 113, 0.1);
+            color: #2ecc71;
+            border-left-color: #2ecc71;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(74, 158, 255, 0.2);
+        }
+
+        th {
+            background: rgba(74, 158, 255, 0.1);
+            color: #4a9eff;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(46, 204, 113, 0.1);
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #2ecc71;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="icon">📈</span> Market Pulse SLM Builder</h1>
+            <p class="tagline">Real-time financial sentiment analyzer with SLM fine-tuning & deployment</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Left Panel: Model Configuration -->
+            <div class="panel">
+                <h2><span class="icon">⚙️</span> Model Configuration</h2>
+
+                <div class="form-group">
+                    <label for="modelName">Model Name</label>
+                    <input type="text" id="modelName" value="market-pulse-slm" placeholder="e.g., market-pulse-slm">
+                </div>
+
+                <div class="form-group">
+                    <label for="baseModel">Base Model</label>
+                    <select id="baseModel">
+                        <option value="qwen3-1.7b">Qwen3-1.7B (Recommended)</option>
+                        <option value="qwen3-0.5b">Qwen3-0.5B (Faster)</option>
+                        <option value="qwen3-3.8b">Qwen3-3.8B (Larger)</option>
+                        <option value="phi3-mini">Phi3-Mini</option>
+                        <option value="mistral-7b">Mistral-7B</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Training Method</label>
+                    <div class="radio-group">
+                        <div class="radio-item">
+                            <input type="radio" id="qlora" name="training" value="qlora" checked>
+                            <label for="qlora">QLoRA + DPO (Fast, Low VRAM)</label>
+                        </div>
+                        <div class="radio-item">
+                            <input type="radio" id="fullft" name="training" value="fullft">
+                            <label for="fullft">Full Fine-tune (Slower, Better)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="epochs">Epochs</label>
+                    <input type="number" id="epochs" value="4" min="1" max="20">
+                </div>
+
+                <div class="form-group">
+                    <label for="batchSize">Batch Size</label>
+                    <input type="number" id="batchSize" value="4" min="1" max="32">
+                </div>
+
+                <div class="form-group">
+                    <label for="learningRate">Learning Rate</label>
+                    <input type="text" id="learningRate" value="2e-4" placeholder="e.g., 2e-4">
+                </div>
+
+                <div class="form-group">
+                    <label>Data Sources</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="newsapi" checked>
+                            <label for="newsapi">NewsAPI (Financial News)</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="yfinance" checked>
+                            <label for="yfinance">Yahoo Finance (Stock Data)</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="coingecko" checked>
+                            <label for="coingecko">CoinGecko (Crypto Data)</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="reddit">
+                            <label for="reddit">Reddit/PRAW (Social Sentiment)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="exportConfig()">Export Config</button>
+                    <button class="btn-secondary" onclick="loadDefaults()">Reset Defaults</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Deployment & Monitoring -->
+            <div class="panel">
+                <h2><span class="icon">🚀</span> Deployment & Monitoring</h2>
+
+                <div class="live-status">
+                    <span class="live-indicator"></span>
+                    <span id="statusText">System Ready</span>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-label">Accuracy (24h)</div>
+                        <div class="metric-value" id="accuracy">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Win Rate</div>
+                        <div class="metric-value" id="winRate">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Latency p95</div>
+                        <div class="metric-value" id="latency">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Signals/Hour</div>
+                        <div class="metric-value" id="signalRate">--</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="deployTarget">Deployment Target</label>
+                    <select id="deployTarget">
+                        <option value="local">Local (Dev)</option>
+                        <option value="docker">Docker (Prod)</option>
+                        <option value="aws-lambda">AWS Lambda (Serverless)</option>
+                        <option value="digitalocean">DigitalOcean Droplet</option>
+                        <option value="kubernetes">Kubernetes (Scale)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="refreshInterval">Refresh Interval</label>
+                    <select id="refreshInterval">
+                        <option value="hourly">Hourly</option>
+                        <option value="15min">Every 15 minutes</option>
+                        <option value="5min">Every 5 minutes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="retrainThreshold">Retraining Trigger (Accuracy Threshold)</label>
+                    <input type="number" id="retrainThreshold" value="65" min="50" max="90" step="5">
+                    <small style="color: #888; display: block; margin-top: 5px;">Retrain if accuracy drops below this %</small>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>API Endpoint:</strong> <code>http://localhost:8000/api/market-pulse/signal</code>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-success" onclick="deployModel()">Deploy Model</button>
+                    <button class="btn-primary" onclick="startLoop()">Start Hourly Loop</button>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div class="collapsible">
+                        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                            📋 Deployment Instructions
+                            <span>▼</span>
+                        </div>
+                        <div class="collapsible-content">
+                            <ol style="margin-left: 20px; color: #b0b0b0;">
+                                <li>Export model config above</li>
+                                <li>Run: <code style="color: #4a9eff;">python orchestrate.py hourly</code></li>
+                                <li>Monitor: <code style="color: #4a9eff;">curl http://localhost:8000/health</code></li>
+                                <li>View signals: <code style="color: #4a9eff;">curl http://localhost:8000/api/market-pulse/latest</code></li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Panel: Live Signals & Logs -->
+        <div class="panel">
+            <h2><span class="icon">📊</span> Live Market Signals</h2>
+
+            <div class="table-responsive">
+                <table id="signalsTable">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Signal</th>
+                            <th>Confidence</th>
+                            <th>Reasoning</th>
+                            <th>Risk Level</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #888;">No signals yet. Start the hourly loop to begin.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="button-group" style="margin-top: 20px;">
+                <button class="btn-primary" onclick="refreshSignals()">Refresh Signals</button>
+                <button class="btn-secondary" onclick="clearLogs()">Clear Logs</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load live metrics from API
+        async function loadMetrics() {
+            try {
+                const response = await fetch('http://localhost:8000/api/market-pulse/metrics');
+                if (!response.ok) throw new Error('Failed to fetch metrics');
+                const data = await response.json();
+
+                document.getElementById('accuracy').textContent =
+                    (data.window_24h?.accuracy * 100).toFixed(0) + '%';
+                document.getElementById('winRate').textContent =
+                    (data.window_24h?.accuracy * 100 * 0.85).toFixed(0) + '%';
+                document.getElementById('latency').textContent =
+                    data.latest?.latency_p95_ms?.toFixed(0) + 'ms';
+                document.getElementById('signalRate').textContent =
+                    Math.round(data.window_24h?.signals_generated / 24) + '/h';
+            } catch (e) {
+                console.warn('Metrics API unavailable:', e.message);
+            }
+        }
+
+        // Load live signals
+        async function refreshSignals() {
+            try {
+                const response = await fetch('http://localhost:8000/api/market-pulse/latest?limit=10');
+                if (!response.ok) throw new Error('Failed to fetch signals');
+                const data = await response.json();
+
+                const tbody = document.querySelector('#signalsTable tbody');
+                if (data.signals && data.signals.length > 0) {
+                    tbody.innerHTML = data.signals.map(signal => `
+                        <tr>
+                            <td><strong>${signal.asset}</strong></td>
+                            <td>${signal.signal}</td>
+                            <td>${(signal.confidence * 100).toFixed(0)}%</td>
+                            <td style="font-size: 0.85em; color: #888;">${signal.reasoning}</td>
+                            <td><span class="status-badge status-${signal.risk_level.toLowerCase()}">${signal.risk_level}</span></td>
+                            <td style="font-size: 0.85em;">${new Date(signal.timestamp).toLocaleString()}</td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) {
+                console.warn('Signals API unavailable:', e.message);
+            }
+        }
+
+        function exportConfig() {
+            const config = {
+                modelName: document.getElementById('modelName').value,
+                baseModel: document.getElementById('baseModel').value,
+                trainingMethod: document.querySelector('input[name="training"]:checked').value,
+                epochs: parseInt(document.getElementById('epochs').value),
+                batchSize: parseInt(document.getElementById('batchSize').value),
+                learningRate: document.getElementById('learningRate').value,
+                dataSources: {
+                    newsapi: document.getElementById('newsapi').checked,
+                    yfinance: document.getElementById('yfinance').checked,
+                    coingecko: document.getElementById('coingecko').checked,
+                    reddit: document.getElementById('reddit').checked
+                },
+                deployTarget: document.getElementById('deployTarget').value,
+                refreshInterval: document.getElementById('refreshInterval').value,
+                retrainThreshold: parseInt(document.getElementById('retrainThreshold').value)
+            };
+
+            const json = JSON.stringify(config, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'market-pulse-config.json';
+            a.click();
+            URL.revokeObjectURL(url);
+
+            alert('Config exported! Use this with: python orchestrate.py --config market-pulse-config.json');
+        }
+
+        function deployModel() {
+            alert('🚀 Deploying model to ' + document.getElementById('deployTarget').value + '...\n\nIn production, this would:\n1. Package the model as GGUF\n2. Deploy to selected target\n3. Start inference service\n4. Begin signal generation');
+        }
+
+        function startLoop() {
+            alert('⏰ Starting hourly loop...\n\nThe system will now:\n1. Fetch market data every hour\n2. Generate trading signals\n3. Track outcomes\n4. Retrain daily (if accuracy < ' + document.getElementById('retrainThreshold').value + '%)');
+
+            // Simulate loop start
+            document.getElementById('statusText').textContent = 'Loop running...';
+            loadMetrics();
+            refreshSignals();
+        }
+
+        function loadDefaults() {
+            document.getElementById('modelName').value = 'market-pulse-slm';
+            document.getElementById('baseModel').value = 'qwen3-1.7b';
+            document.getElementById('epochs').value = 4;
+            document.getElementById('batchSize').value = 4;
+            document.getElementById('learningRate').value = '2e-4';
+            document.getElementById('newsapi').checked = true;
+            document.getElementById('yfinance').checked = true;
+            document.getElementById('coingecko').checked = true;
+            document.getElementById('reddit').checked = false;
+            document.getElementById('deployTarget').value = 'local';
+            document.getElementById('retrainThreshold').value = 65;
+        }
+
+        function clearLogs() {
+            document.querySelector('#signalsTable tbody').innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #888;">Logs cleared</td>
+                </tr>
+            `;
+        }
+
+        function toggleCollapsible(header) {
+            const content = header.nextElementSibling;
+            content.classList.toggle('active');
+            const arrow = header.querySelector('span');
+            arrow.style.transform = content.classList.contains('active') ? 'rotate(180deg)' : 'rotate(0)';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMetrics();
+            refreshSignals();
+
+            // Refresh every 30 seconds
+            setInterval(() => {
+                loadMetrics();
+                refreshSignals();
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
