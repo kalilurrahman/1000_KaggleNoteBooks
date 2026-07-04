@@ -1,6 +1,8 @@
-name: Deploy SLM Builder Studio to GitHub Pages
+name: Deploy web apps to GitHub Pages
 
-# Publishes slm-builder/ to the gh-pages branch, which GitHub Pages serves.
+# Publishes both static apps to the gh-pages branch, which GitHub Pages serves:
+#   slm-builder/     -> site root   (keeps its existing URL)
+#   trivia-quiz-pwa/ -> /quizverse/
 # (The Actions-based Pages deployment needs the site pre-created by an admin;
 # branch publishing works with the default workflow token.)
 
@@ -9,6 +11,7 @@ on:
     branches: [main]
     paths:
       - "slm-builder/**"
+      - "trivia-quiz-pwa/**"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -24,10 +27,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish slm-builder/ to gh-pages
+      - name: Assemble site
         run: |
-          cd slm-builder
-          touch .nojekyll
+          mkdir -p site
+          cp -r slm-builder/. site/
+          mkdir -p site/quizverse
+          cp -r trivia-quiz-pwa/. site/quizverse/
+          touch site/.nojekyll
+      - name: Publish to gh-pages
+        run: |
+          cd site
           git init -b gh-pages
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
