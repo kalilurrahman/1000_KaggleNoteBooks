@@ -1,9 +1,0 @@
-{
-  "timestamp": "2026-07-04T16:04:57.011406",
-  "signal_accuracy_24h": 0.68,
-  "win_rate": 0.65,
-  "sharpe_ratio": 1.2,
-  "latency_p95_ms": 380,
-  "total_signals": 150,
-  "correct_signals": 102
-}

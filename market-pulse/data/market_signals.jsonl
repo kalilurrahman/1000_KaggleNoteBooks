@@ -1,1 +1,0 @@
-{"signal_id": "SPY-2026-07-04T16:04:56.814593", "asset": "SPY", "signal": "BUY", "confidence": 0.78108, "reasoning": "Sentiment 0.41, RSI 62, Price Change 1.8%", "risk_level": "MEDIUM", "timestamp": "2026-07-04T16:04:55.443433", "latency_ms": 250, "model_version": "ckpt-20260704-120000"}
