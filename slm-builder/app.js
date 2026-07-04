@@ -163,7 +163,8 @@ const STEPS = [
 function stepDefine() {
   return `
   <h2>1 · Define your SLM</h2>
-  <p class="sub">Everything downstream — data prompts, training configs, system prompt, deployment — is generated from these answers.</p>
+  <p class="sub">Everything downstream — data prompts, training configs, system prompt, deployment — is generated from these answers.
+  New here? <a href="#" id="goto-examples">Start from an example</a> (cricket quiz game, support bot, tutor…) and tweak from there.</p>
 
   <div class="grid2">
     ${field("Project name", textInput("name", "support-bot-slm"), "Used for file names, model names, output dirs.")}
@@ -171,7 +172,7 @@ function stepDefine() {
       ["general", "General purpose"], ["legal", "Legal"], ["medical", "Medical / healthcare"],
       ["finance", "Finance"], ["support", "Customer support"], ["ecommerce", "E-commerce / retail"],
       ["education", "Education"], ["science", "Science / research"], ["code", "Software / code"],
-      ["custom", "Custom (describe below)"],
+      ["sports", "Sports / gaming"], ["custom", "Custom (describe below)"],
     ]), "Drives dataset suggestions and prompt templates.")}
   </div>
   ${S.domain === "custom" ? field("Custom domain", textInput("domainText", "e.g. maritime logistics, veterinary medicine, Tamil literature"), "Any topic works — the generators adapt.") : ""}
@@ -187,6 +188,7 @@ function stepDefine() {
     { v: "extraction", t: "🧾 Structured extraction", d: "Text → JSON: entities, fields, classifications with a schema." },
     { v: "classification", t: "🏷️ Classifier", d: "Routes/labels text: intent, priority, category, sentiment." },
     { v: "code", t: "⌨️ Code assistant", d: "Generates/explains code for a specific stack or internal framework." },
+    { v: "quiz", t: "🎲 Quiz generator", d: "Quiz-master for games: emits questions as strict JSON (options, answer, difficulty, explanation) and checks answers." },
   ])}
 
   <h3>Behavior & constraints</h3>
@@ -582,6 +584,9 @@ function bind(panel) {
   panel.querySelectorAll("[data-art]").forEach(b => {
     b.addEventListener("click", () => { activeArtifact = Number(b.dataset.art); render(); });
   });
+  // "start from an example" shortcut on step 1
+  const gx = el("goto-examples");
+  if (gx) gx.addEventListener("click", e => { e.preventDefault(); showTab("examples"); });
   // step nav
   const prev = el("nav-prev"), next = el("nav-next"), restart = el("nav-restart");
   if (prev) prev.addEventListener("click", () => go(currentStep - 1));
@@ -627,13 +632,49 @@ function downloadBlob(blob, filename) {
 
 /* --------------------------- Tabs & top actions ---------------------------- */
 
+const TABS = ["builder", "examples", "guide"];
+function showTab(name) {
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  TABS.forEach(t => { el("tab-" + t).style.display = t === name ? "" : "none"; });
+  window.scrollTo({ top: 0 });
+}
 el("tabs").addEventListener("click", e => {
   const btn = e.target.closest("button[data-tab]");
-  if (!btn) return;
-  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("active", b === btn));
-  el("tab-builder").style.display = btn.dataset.tab === "builder" ? "" : "none";
-  el("tab-guide").style.display = btn.dataset.tab === "guide" ? "" : "none";
+  if (btn) showTab(btn.dataset.tab);
 });
+
+/* ------------------------------ Examples ---------------------------------- */
+
+function renderExamples() {
+  el("examples-list").innerHTML = `
+    <h2 style="margin:0 0 4px">Example projects</h2>
+    <p class="sub" style="color:var(--muted);margin:0 0 20px">One click loads the whole wizard — domain, data plan, model, training, deployment — with sensible choices for that use case. Review each step, tweak anything, then export from step 8.</p>
+    <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+      ${TEMPLATES.map(t => `
+        <div class="card" data-tpl="${t.id}" style="display:flex;flex-direction:column;gap:8px">
+          <div class="t" style="font-size:15px">${t.icon} ${t.title}</div>
+          <div class="d">${t.d || t.desc}</div>
+          <div class="pill-row" style="margin:2px 0 6px">${t.tags.map(tag => `<span class="badge blue">${tag}</span>`).join("")}</div>
+          <button class="btn primary sm" data-tpl-load="${t.id}" style="align-self:flex-start">Load this example</button>
+        </div>`).join("")}
+    </div>
+    <div class="callout" style="margin-top:22px"><b>Want a different one?</b> Load the closest template, then change the topic on step 1 — every generated file adapts. A "football quiz" is the cricket template with one sentence edited.</div>`;
+
+  el("examples-list").addEventListener("click", e => {
+    const btn = e.target.closest("[data-tpl-load]");
+    if (!btn) return;
+    const tpl = TEMPLATES.find(t => t.id === btn.dataset.tplLoad);
+    if (!tpl) return;
+    S = { ...DEFAULTS, ...tpl.state };
+    persist();
+    activeArtifact = 0;
+    visited = new Set([0]);
+    showTab("builder");
+    go(0);
+    toast(`Loaded "${tpl.title}" — review each step, then export`);
+  });
+}
+renderExamples();
 
 el("stepnav").addEventListener("click", e => {
   const b = e.target.closest("button[data-step]");
