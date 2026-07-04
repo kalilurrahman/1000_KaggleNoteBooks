@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>QuizVerse — Trivia Quiz Game</title>
+  <meta name="description" content="QuizVerse: an interactive trivia quiz PWA with Classic, Jeopardy, Mastermind and Rapid Fire modes covering every topic in the world." />
+  <meta name="theme-color" content="#6366f1" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="topbar">
+    <button class="brand" id="btn-home" aria-label="Home">
+      <span class="brand-mark">?</span>
+      <span class="brand-name">Quiz<em>Verse</em></span>
+    </button>
+    <div class="topbar-actions">
+      <span id="net-status" class="net-badge" title="Connection status">●</span>
+      <button id="btn-sound" class="icon-btn" aria-label="Toggle sound">🔊</button>
+      <button id="btn-theme" class="icon-btn" aria-label="Toggle theme">🌙</button>
+      <button id="btn-install" class="icon-btn hidden" aria-label="Install app">⬇️</button>
+    </div>
+  </header>
+
+  <main id="app">
+
+    <!-- ============ HOME ============ -->
+    <section id="screen-home" class="screen active">
+      <div class="hero">
+        <h1>Pick your battle</h1>
+        <p class="hero-sub">Four game modes · every topic in the world · offline-ready</p>
+      </div>
+
+      <div class="mode-grid">
+        <button class="mode-card" data-mode="classic">
+          <span class="mode-icon">🎯</span>
+          <span class="mode-name">Classic Quiz</span>
+          <span class="mode-desc">Choose topic, difficulty &amp; length. Answer at your own pace with hints and 50:50 lifelines.</span>
+          <span class="mode-tag">Relaxed · Any topic</span>
+        </button>
+        <button class="mode-card" data-mode="jeopardy">
+          <span class="mode-icon">🟦</span>
+          <span class="mode-name">Jeopardy</span>
+          <span class="mode-desc">A 5×5 board of categories and dollar values. Wrong answers cost you. Find the Daily Double!</span>
+          <span class="mode-tag">Board game · Risk &amp; reward</span>
+        </button>
+        <button class="mode-card" data-mode="mastermind">
+          <span class="mode-icon">🧠</span>
+          <span class="mode-name">Mastermind</span>
+          <span class="mode-desc">Two timed rounds: your specialist subject, then general knowledge. You may pass — but the clock never stops.</span>
+          <span class="mode-tag">Timed rounds · Specialist</span>
+        </button>
+        <button class="mode-card" data-mode="rapidfire">
+          <span class="mode-icon">⚡</span>
+          <span class="mode-name">Rapid Fire</span>
+          <span class="mode-desc">Tata Crucible-style buzzer round: 90 seconds, +10 for right, −5 for wrong, streak bonuses. Think fast!</span>
+          <span class="mode-tag">Buzzer · Negative marking</span>
+        </button>
+      </div>
+
+      <div class="home-footer">
+        <button id="btn-scores" class="ghost-btn">🏅 High scores</button>
+        <button id="btn-about" class="ghost-btn">ℹ️ How to play</button>
+      </div>
+    </section>
+
+    <!-- ============ SETUP ============ -->
+    <section id="screen-setup" class="screen">
+      <h2 id="setup-title">Game setup</h2>
+
+      <div class="setup-block" id="setup-source-block">
+        <h3>Question source</h3>
+        <div class="pill-row" id="source-pills">
+          <button class="pill selected" data-source="local">📦 Built-in (offline)</button>
+          <button class="pill" data-source="online">🌐 Online — any topic (Open Trivia DB)</button>
+        </div>
+        <p class="hint" id="source-hint">Built-in bank: 330+ hand-picked questions across 14 topics. Online mode unlocks thousands more across 24 categories.</p>
+      </div>
+
+      <div class="setup-block" id="setup-topic-block">
+        <h3 id="topic-label">Topic</h3>
+        <div class="pill-row wrap" id="topic-pills"></div>
+      </div>
+
+      <div class="setup-block" id="setup-difficulty-block">
+        <h3>Difficulty</h3>
+        <div class="pill-row" id="difficulty-pills">
+          <button class="pill" data-diff="easy">🟢 Easy</button>
+          <button class="pill selected" data-diff="medium">🟡 Medium</button>
+          <button class="pill" data-diff="hard">🔴 Hard</button>
+          <button class="pill" data-diff="mixed">🎲 Mixed</button>
+        </div>
+      </div>
+
+      <div class="setup-block" id="setup-count-block">
+        <h3>Number of questions</h3>
+        <div class="pill-row" id="count-pills">
+          <button class="pill" data-count="5">5</button>
+          <button class="pill selected" data-count="10">10</button>
+          <button class="pill" data-count="15">15</button>
+          <button class="pill" data-count="20">20</button>
+        </div>
+      </div>
+
+      <div class="setup-actions">
+        <button class="ghost-btn" id="btn-setup-back">← Back</button>
+        <button class="primary-btn" id="btn-start">Start game ▶</button>
+      </div>
+    </section>
+
+    <!-- ============ QUIZ (classic / mastermind / rapidfire share this) ============ -->
+    <section id="screen-quiz" class="screen">
+      <div class="quiz-hud">
+        <div class="hud-item"><span class="hud-label" id="hud-progress-label">Question</span><span class="hud-value" id="hud-progress">1/10</span></div>
+        <div class="hud-item hud-score"><span class="hud-label">Score</span><span class="hud-value" id="hud-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Streak</span><span class="hud-value" id="hud-streak">🔥 0</span></div>
+        <div class="hud-item hud-timer hidden" id="hud-timer-wrap"><span class="hud-label" id="hud-timer-label">Time</span><span class="hud-value" id="hud-timer">--</span></div>
+      </div>
+
+      <div class="timer-bar-track hidden" id="timer-bar-track"><div class="timer-bar" id="timer-bar"></div></div>
+
+      <div class="round-banner hidden" id="round-banner"></div>
+
+      <div class="question-card">
+        <div class="q-meta"><span id="q-category">Category</span><span id="q-difficulty" class="q-diff">medium</span></div>
+        <h2 class="q-text" id="q-text">Loading question…</h2>
+        <div class="answers" id="answers"></div>
+      </div>
+
+      <div class="quiz-toolbar">
+        <button class="tool-btn" id="btn-fifty">50:50 <span class="tool-count" id="fifty-count">×2</span></button>
+        <button class="tool-btn" id="btn-skip">Pass ⏭</button>
+        <button class="tool-btn danger" id="btn-quit">Quit ✕</button>
+      </div>
+    </section>
+
+    <!-- ============ JEOPARDY BOARD ============ -->
+    <section id="screen-jeopardy" class="screen">
+      <div class="quiz-hud">
+        <div class="hud-item hud-score"><span class="hud-label">Bank</span><span class="hud-value" id="jeo-score">$0</span></div>
+        <div class="hud-item"><span class="hud-label">Clues left</span><span class="hud-value" id="jeo-remaining">25</span></div>
+        <button class="tool-btn danger" id="btn-jeo-quit">End game ✕</button>
+      </div>
+      <div class="jeopardy-board" id="jeopardy-board"></div>
+    </section>
+
+    <!-- ============ JEOPARDY CLUE MODAL ============ -->
+    <div id="jeo-modal" class="modal hidden">
+      <div class="modal-card jeo-clue">
+        <div class="jeo-clue-head">
+          <span id="jeo-clue-cat">CATEGORY</span>
+          <span id="jeo-clue-value">$200</span>
+        </div>
+        <div class="daily-double hidden" id="daily-double">💫 DAILY DOUBLE! Points are doubled.</div>
+        <h2 class="q-text" id="jeo-clue-text"></h2>
+        <div class="answers" id="jeo-answers"></div>
+        <div class="jeo-timer-track"><div class="timer-bar" id="jeo-timer-bar"></div></div>
+      </div>
+    </div>
+
+    <!-- ============ RESULTS ============ -->
+    <section id="screen-results" class="screen">
+      <div class="results-card">
+        <div class="results-emoji" id="results-emoji">🎉</div>
+        <h2 id="results-title">Game over!</h2>
+        <div class="results-score"><span id="results-score">0</span><span class="results-score-label" id="results-score-label">points</span></div>
+        <p class="results-verdict" id="results-verdict"></p>
+        <div class="results-stats" id="results-stats"></div>
+        <div class="new-record hidden" id="new-record">🏅 New high score!</div>
+        <div class="results-actions">
+          <button class="primary-btn" id="btn-replay">Play again ↻</button>
+          <button class="ghost-btn" id="btn-results-home">Home 🏠</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HIGH SCORES ============ -->
+    <section id="screen-scores" class="screen">
+      <h2>🏅 High scores</h2>
+      <div id="scores-list" class="scores-list"></div>
+      <div class="setup-actions">
+        <button class="ghost-btn" id="btn-scores-back">← Back</button>
+        <button class="ghost-btn danger" id="btn-scores-clear">Clear scores</button>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section id="screen-about" class="screen">
+      <h2>ℹ️ How to play</h2>
+      <div class="about-blocks">
+        <div class="about-block"><h3>🎯 Classic Quiz</h3><p>Pick a topic, difficulty and quiz length. Answer multiple-choice questions at your own pace. You get two 50:50 lifelines that remove two wrong answers, and streaks multiply your score (+10 per correct, +2 per streak level).</p></div>
+        <div class="about-block"><h3>🟦 Jeopardy</h3><p>A board of 5 categories × 5 values ($200–$1000). Pick any clue; a correct answer adds its value, a wrong one subtracts it. One hidden <strong>Daily Double</strong> doubles the stakes. Each clue has a 20-second timer. Clear the board or cash out anytime.</p></div>
+        <div class="about-block"><h3>🧠 Mastermind</h3><p>Inspired by the BBC classic: Round 1 is 90 seconds on your chosen <strong>specialist subject</strong>; Round 2 is 120 seconds of general knowledge. Answer as many as you can — passing is allowed but the clock never stops. 10 points per correct answer.</p></div>
+        <div class="about-block"><h3>⚡ Rapid Fire</h3><p>Tata Crucible-style buzzer round: one 90-second blitz across all topics. +10 for a correct answer, <strong>−5 for a wrong one</strong>, and every 3-in-a-row streak awards a +15 bonus. Passing is free — but time is not.</p></div>
+        <div class="about-block"><h3>🌐 Online mode</h3><p>With an internet connection, Classic mode can pull fresh questions from the <a href="https://opentdb.com" target="_blank" rel="noopener">Open Trivia Database</a> — 24 categories and thousands of questions. Offline, the built-in bank of 330+ questions keeps every mode playable.</p></div>
+        <div class="about-block"><h3>📱 Install as an app</h3><p>QuizVerse is a PWA: use your browser's <em>Install</em> / <em>Add to Home Screen</em> option to play it like a native app, fully offline.</p></div>
+      </div>
+      <div class="setup-actions"><button class="ghost-btn" id="btn-about-back">← Back</button></div>
+    </section>
+
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/questions.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
