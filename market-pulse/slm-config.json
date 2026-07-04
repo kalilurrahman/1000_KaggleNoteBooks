@@ -1,0 +1,128 @@
+{
+  "appName": "Market Pulse SLM",
+  "description": "Real-time financial market sentiment analyzer and trading signal generator",
+  "slmConfig": {
+    "name": "market-pulse-trader",
+    "task": "market-sentiment",
+    "domain": "financial-markets",
+    "model": "qwen3-1.7b",
+    "path": "finetune",
+    "framework": "unsloth",
+    "quantization": "4bit",
+    "baseModel": "Qwen/Qwen2.5-1.7B-Instruct",
+    "deployTarget": "fastapi",
+    "privacy": false,
+    "stageQLoRA": true,
+    "stageDpo": true,
+    "batchSize": 4,
+    "gradAccum": 2,
+    "epochs": 4,
+    "lrSchedule": "cosine"
+  },
+  "dataConfig": {
+    "sources": [
+      {
+        "name": "NewsAPI",
+        "endpoint": "https://newsapi.org/v2/everything",
+        "filters": ["financial news", "market sentiment", "stock market", "cryptocurrency"],
+        "frequency": "hourly"
+      },
+      {
+        "name": "Yahoo Finance",
+        "endpoint": "yfinance",
+        "assets": ["SPY", "QQQ", "GLD", "TLT", "BTC-USD", "ETH-USD"],
+        "frequency": "hourly"
+      },
+      {
+        "name": "CoinGecko",
+        "endpoint": "https://api.coingecko.com/api/v3",
+        "assets": ["bitcoin", "ethereum", "cardano"],
+        "frequency": "hourly"
+      },
+      {
+        "name": "Kaggle Datasets",
+        "endpoint": "kaggle.com",
+        "datasets": [
+          "kaushikjadhav01/Stock-Market-Dataset",
+          "kaushiksuresh0015/market-sentiment-analysis"
+        ],
+        "frequency": "weekly-seed"
+      }
+    ],
+    "seedData": {
+      "trainingExamples": 5000,
+      "format": "jsonl",
+      "schema": {
+        "timestamp": "ISO8601",
+        "asset": "string",
+        "price_change": "float (-100 to 100%)",
+        "volume_change": "float",
+        "sentiment_score": "float (-1 to 1)",
+        "news_summary": "string",
+        "technical_rsi": "float (0-100)",
+        "technical_macd": "float",
+        "bollinger_position": "float (0-1)",
+        "expected_signal": "string (BUY|HOLD|SELL)",
+        "outcome_1h": "string (correct|incorrect)",
+        "outcome_24h": "string (correct|incorrect)"
+      }
+    }
+  },
+  "trainingConfig": {
+    "method": "QLoRA + DPO",
+    "epochs": 4,
+    "lr": 2e-4,
+    "warmupSteps": 100,
+    "maxTokens": 1024,
+    "hardware": "T4-GPU (Colab) or RTX-4090",
+    "estimatedTime": "30-60 minutes per retrain cycle",
+    "syncStrategy": "daily (24h) or on accuracy drop (<65%)"
+  },
+  "inferenceConfig": {
+    "latencySLO": "<500ms per signal",
+    "throughput": "100+ signals/hour",
+    "quantization": "GGUF 4-bit",
+    "deployment": "Ollama + FastAPI",
+    "scalingOptions": [
+      "Single T4 (development)",
+      "A100 cluster (production)",
+      "AWS Lambda (serverless)"
+    ]
+  },
+  "evaluationConfig": {
+    "metrics": [
+      "signal_accuracy (24h rolling)",
+      "win_rate (profitable vs unprofitable signals)",
+      "sharpe_ratio (risk-adjusted returns)",
+      "latency_p95 (inference speed)",
+      "drift_detection (model performance degradation)"
+    ],
+    "testSet": "held-out 20% of last 7 days",
+    "humanFeedback": "Trader corrections via API → retraining data"
+  },
+  "apiEndpoints": [
+    {
+      "endpoint": "GET /api/market-pulse/latest",
+      "response": "Current buy/sell/hold signals with confidence scores"
+    },
+    {
+      "endpoint": "GET /api/market-pulse/brief",
+      "response": "Hourly market brief (top signals, sentiment shifts, risk alerts)"
+    },
+    {
+      "endpoint": "POST /api/market-pulse/feedback",
+      "body": "{ signal_id, trader_feedback, outcome }",
+      "purpose": "Collect trader corrections for next retraining"
+    },
+    {
+      "endpoint": "GET /api/market-pulse/metrics",
+      "response": "Model performance over last 24h, 7d, 30d"
+    }
+  ],
+  "successCriteria": {
+    "signalAccuracy": ">70% over 24h windows",
+    "latency": "<500ms p95",
+    "modelUpdateDeploymentTime": "<5 minutes (zero downtime A/B test)",
+    "dataFreshness": "Signals generated within 5 min of latest market data"
+  }
+}

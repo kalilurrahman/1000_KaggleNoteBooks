@@ -1,0 +1,88 @@
+{
+  "feeds": [
+    {
+      "id": "newsapi-financial",
+      "provider": "NewsAPI",
+      "endpoint": "https://newsapi.org/v2/everything",
+      "apiKey": "${NEWSAPI_KEY}",
+      "params": {
+        "q": "(stock market OR cryptocurrency OR trading OR earnings OR Fed OR inflation)",
+        "language": "en",
+        "sortBy": "publishedAt",
+        "pageSize": 100
+      },
+      "frequency": "every 1 hour",
+      "outputFile": "data/latest_news.jsonl"
+    },
+    {
+      "id": "yahoo-finance-stocks",
+      "provider": "yfinance",
+      "symbols": ["SPY", "QQQ", "IWM", "GLD", "TLT", "DXY"],
+      "interval": "1h",
+      "period": "5d",
+      "frequency": "every 1 hour",
+      "indicators": ["RSI", "MACD", "Bollinger Bands", "Volume MA"],
+      "outputFile": "data/stock_data.jsonl"
+    },
+    {
+      "id": "coingecko-crypto",
+      "provider": "CoinGecko",
+      "coins": ["bitcoin", "ethereum", "cardano", "solana"],
+      "interval": "1h",
+      "frequency": "every 1 hour",
+      "metrics": ["price_change_24h", "market_cap_change", "volume"],
+      "outputFile": "data/crypto_data.jsonl"
+    },
+    {
+      "id": "reddit-sentiment",
+      "provider": "PRAW (Reddit API)",
+      "subreddits": ["stocks", "wallstreetbets", "cryptocurrency", "investing"],
+      "keywords": ["bullish", "bearish", "moon", "crash", "buy", "sell"],
+      "frequency": "every 2 hours",
+      "outputFile": "data/reddit_sentiment.jsonl",
+      "note": "Requires Reddit API credentials (client_id, client_secret)"
+    },
+    {
+      "id": "twitter-sentiment",
+      "provider": "Twitter API v2",
+      "queries": ["#stocks", "#trading", "#crypto", "#bitcoin", "$SPY", "$QQQ"],
+      "frequency": "every 1 hour",
+      "outputFile": "data/twitter_sentiment.jsonl",
+      "note": "Requires Twitter API Bearer token"
+    }
+  ],
+  "dataSchema": {
+    "timestamp": "ISO8601",
+    "asset": "string (SPY, BTC-USD, etc)",
+    "source": "string (newsapi, yfinance, coingecko, reddit, twitter)",
+    "priceAction": {
+      "currentPrice": "float",
+      "change24h": "float (percent)",
+      "volume": "float",
+      "rsi": "float (0-100)",
+      "macd": "float",
+      "bollinger_band": "float (0-1, position between bands)"
+    },
+    "sentiment": {
+      "score": "float (-1 to 1)",
+      "magnitude": "float (0-1, intensity of sentiment)",
+      "sources": ["string"]
+    },
+    "news": {
+      "headline": "string",
+      "summary": "string",
+      "source": "string",
+      "sentiment": "float (-1 to 1)"
+    }
+  },
+  "aggregationStrategy": {
+    "description": "Combine multiple data sources into unified signal input",
+    "steps": [
+      "1. Collect latest data from all feeds (within last 1h)",
+      "2. Normalize prices, volumes, indicators to 0-1 scale",
+      "3. Compute weighted sentiment: (news_sentiment * 0.4) + (social_sentiment * 0.3) + (price_action * 0.3)",
+      "4. Flag alerts: RSI >70 (overbought), <30 (oversold), volume spike >2x median",
+      "5. Output: aggregated feature vector for SLM inference"
+    ]
+  }
+}
